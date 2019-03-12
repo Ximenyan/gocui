@@ -197,7 +197,7 @@ func (g *Gui) ViewByPosition(x, y int) (*View, error) {
 	// traverse views in reverse order checking top views first
 	for i := len(g.views); i > 0; i-- {
 		v := g.views[i-1]
-		if x > v.x0 && x < v.x1 && y > v.y0 && y < v.y1 {
+		if x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1 {
 			return v, nil
 		}
 	}
@@ -363,7 +363,6 @@ func (g *Gui) MainLoop() error {
 		inputMode |= termbox.InputMouse
 	}
 	termbox.SetInputMode(inputMode)
-
 	if err := g.flush(); err != nil {
 		return err
 	}
@@ -458,6 +457,11 @@ func (g *Gui) flush() error {
 					return err
 				}
 			}
+			if v.Close {
+				if err := g.drawCloseBtn(v, fgColor, bgColor); err != nil {
+					return err
+				}
+			}
 		}
 		if err := g.draw(v); err != nil {
 			return err
@@ -549,6 +553,22 @@ func (g *Gui) drawTitle(v *View, fgColor, bgColor Attribute) error {
 	return nil
 }
 
+// drawCloseBtn draws the title of the view.
+func (g *Gui) drawCloseBtn(v *View, fgColor, bgColor Attribute) error {
+	if v.y0 < 0 || v.y0 >= g.maxY {
+		return nil
+	}
+
+	x := v.x1
+	if x >= g.maxX {
+		return nil
+	}
+	if err := g.SetRune(x, v.y0, 'Ⓧ', fgColor, bgColor); err != nil {
+		return err
+	}
+	return nil
+}
+
 // draw manages the cursor and calls the draw function of a view.
 func (g *Gui) draw(v *View) error {
 	if g.Cursor {
@@ -602,10 +622,12 @@ func (g *Gui) onKey(ev *termbox.Event) error {
 		}
 	case termbox.EventMouse:
 		mx, my := ev.MouseX, ev.MouseY
+
 		v, err := g.ViewByPosition(mx, my)
 		if err != nil {
 			break
 		}
+
 		if err := v.SetCursor(mx-v.x0-1, my-v.y0-1); err != nil {
 			return err
 		}

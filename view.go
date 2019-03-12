@@ -68,7 +68,8 @@ type View struct {
 
 	// If Frame is true, Title allows to configure a title for the view.
 	Title string
-
+	// If Frame is true, Title allows to configure a title for the view.
+	Close bool
 	// If Mask is true, the View will display the mask instead of the real
 	// content
 	Mask rune
@@ -165,7 +166,7 @@ func (v *View) setRune(x, y int, ch rune, fgColor, bgColor Attribute) error {
 func (v *View) SetCursor(x, y int) error {
 	maxX, maxY := v.Size()
 	if x < 0 || x >= maxX || y < 0 || y >= maxY {
-		return errors.New("invalid point")
+		//return errors.New("invalid point")
 	}
 	v.cx = x
 	v.cy = y
