@@ -143,12 +143,26 @@ func (g *Gui) SetView(name string, x0, y0, x1, y1 int) (*View, error) {
 		v.tainted = true
 		return v, nil
 	}
-
 	v := newView(name, x0, y0, x1, y1, g.outputMode)
+	v.Type = DefaultView
 	v.BgColor, v.FgColor = g.BgColor, g.FgColor
 	v.SelBgColor, v.SelFgColor = g.SelBgColor, g.SelFgColor
 	g.views = append(g.views, v)
 	return v, ErrUnknownView
+}
+func (g *Gui) SetEditTextView(name string, x0, y0, x1, y1 int) (*View, error) {
+	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
+		if err != ErrUnknownView {
+			return nil, err
+		}
+		v.Type = EditTextView
+		v.Editable = true
+		v.Wrap = true
+		v.Overwrite = false
+		return v, ErrUnknownView
+
+	}
+	return nil, nil
 }
 
 // SetViewOnTop sets the given view on top of the existing ones.
@@ -436,6 +450,9 @@ func (g *Gui) flush() error {
 		}
 	}
 	for _, v := range g.views {
+		if v.Hidden {
+			continue
+		}
 		if v.Frame {
 			var fgColor, bgColor Attribute
 			if g.Highlight && v == g.currentView {

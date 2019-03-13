@@ -14,6 +14,12 @@ import (
 	"github.com/nsf/termbox-go"
 )
 
+const (
+	DefaultView uint8 = iota
+	EditTextView
+	PopupView
+)
+
 // A View is a window. It maintains its own internal buffer and cursor
 // position.
 type View struct {
@@ -24,9 +30,9 @@ type View struct {
 	lines          [][]cell
 	readOffset     int
 	readCache      string
-
-	tainted   bool       // marks if the viewBuffer must be updated
-	viewLines []viewLine // internal representation of the view's buffer
+	Type           uint8      // view type
+	tainted        bool       // marks if the viewBuffer must be updated
+	viewLines      []viewLine // internal representation of the view's buffer
 
 	ei *escapeInterpreter // used to decode ESC sequences on Write
 
@@ -68,7 +74,9 @@ type View struct {
 
 	// If Frame is true, Title allows to configure a title for the view.
 	Title string
-	// If Frame is true, Title allows to configure a title for the view.
+	// Hidden
+	Hidden bool
+	// If Close is true, view have a close btn.
 	Close bool
 	// If Mask is true, the View will display the mask instead of the real
 	// content
@@ -120,6 +128,16 @@ func (v *View) Size() (x, y int) {
 // Name returns the name of the view.
 func (v *View) Name() string {
 	return v.name
+}
+
+func (v *View) Show() {
+	v.Hidden = false
+}
+func (v *View) Hide() {
+	v.Hidden = true
+}
+func (v *View) Fade() {
+	v.Hidden = !v.Hidden
 }
 
 // setRune sets a rune at the given point relative to the view. It applies the
@@ -392,7 +410,6 @@ func (v *View) realPosition(vx, vy int) (x, y int, err error) {
 // Clear empties the view's internal buffer.
 func (v *View) Clear() {
 	v.tainted = true
-
 	v.lines = nil
 	v.viewLines = nil
 	v.readOffset = 0
