@@ -6,6 +6,7 @@ package gocui
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/nsf/termbox-go"
 )
@@ -32,14 +33,15 @@ const (
 // Gui represents the whole User Interface, including the views, layouts
 // and keybindings.
 type Gui struct {
-	tbEvents    chan termbox.Event
-	userEvents  chan userEvent
-	views       []*View
-	currentView *View
-	managers    []Manager
-	keybindings []*keybinding
-	maxX, maxY  int
-	outputMode  OutputMode
+	tbEvents      chan termbox.Event
+	userEvents    chan userEvent
+	views         []*View
+	currentView   *View
+	managers      []Manager
+	keyBindingMap sync.Map
+	keybindings   []*keybinding
+	maxX, maxY    int
+	outputMode    OutputMode
 
 	// BgColor and FgColor allow to configure the background and foreground
 	// colors of the GUI.
@@ -70,12 +72,12 @@ type Gui struct {
 
 // NewGui returns a new Gui object with a given output mode.
 func NewGui(mode OutputMode) (*Gui, error) {
+
 	if err := termbox.Init(); err != nil {
 		return nil, err
 	}
 
 	g := &Gui{}
-
 	g.outputMode = mode
 	termbox.SetOutputMode(termbox.OutputMode(mode))
 
@@ -149,6 +151,25 @@ func (g *Gui) SetView(name string, x0, y0, x1, y1 int) (*View, error) {
 	v.SelBgColor, v.SelFgColor = g.SelBgColor, g.SelFgColor
 	g.views = append(g.views, v)
 	return v, ErrUnknownView
+}
+func (g *Gui) SetPopupView(name string, x0, y0, x1, y1 int) (*View, error) {
+	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
+		if err != ErrUnknownView {
+			return nil, err
+		}
+		v.CloseBtn = true
+		v.Type = PopupView
+		if err := g.SetKeybinding("", MouseLeft, ModNone, func(g *Gui, click_v *View) error {
+			if !v.Hidden && click_v.Name() == v.Name() {
+				v.Fade()
+			}
+			return nil
+		}); err != nil {
+			return v, ErrUnknownView
+		}
+		return v, ErrUnknownView
+	}
+	return nil, nil
 }
 func (g *Gui) SetEditTextView(name string, x0, y0, x1, y1 int) (*View, error) {
 	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
@@ -474,7 +495,7 @@ func (g *Gui) flush() error {
 					return err
 				}
 			}
-			if v.Close {
+			if v.CloseBtn {
 				if err := g.drawCloseBtn(v, fgColor, bgColor); err != nil {
 					return err
 				}
@@ -580,7 +601,11 @@ func (g *Gui) drawCloseBtn(v *View, fgColor, bgColor Attribute) error {
 	if x >= g.maxX {
 		return nil
 	}
-	if err := g.SetRune(x, v.y0, 'Ⓧ', fgColor, bgColor); err != nil {
+	//
+	if err := g.SetRune(x-1, v.y0, 'Ⓧ', fgColor, bgColor); err != nil {
+		return err
+	}
+	if err := g.SetRune(x, v.y0, ' ', fgColor, bgColor); err != nil {
 		return err
 	}
 	return nil
@@ -639,7 +664,6 @@ func (g *Gui) onKey(ev *termbox.Event) error {
 		}
 	case termbox.EventMouse:
 		mx, my := ev.MouseX, ev.MouseY
-
 		v, err := g.ViewByPosition(mx, my)
 		if err != nil {
 			break

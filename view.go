@@ -77,7 +77,7 @@ type View struct {
 	// Hidden
 	Hidden bool
 	// If Close is true, view have a close btn.
-	Close bool
+	CloseBtn bool
 	// If Mask is true, the View will display the mask instead of the real
 	// content
 	Mask rune
