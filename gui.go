@@ -160,8 +160,13 @@ func (g *Gui) SetPopupView(name string, x0, y0, x1, y1 int) (*View, error) {
 		v.CloseBtn = true
 		v.Type = PopupView
 		if err := g.SetKeybinding("", MouseLeft, ModNone, func(g *Gui, click_v *View) error {
-			if !v.Hidden && click_v.Name() == v.Name() {
-				v.Fade()
+			if click_v.Name() == v.Name() {
+				x, y := v.Cursor()
+				//log.Println(x, y, x1, y0)
+				if x >= v.x1-v.x0-2 && y == -1 {
+
+					v.Hide()
+				}
 			}
 			return nil
 		}); err != nil {
@@ -232,7 +237,7 @@ func (g *Gui) ViewByPosition(x, y int) (*View, error) {
 	// traverse views in reverse order checking top views first
 	for i := len(g.views); i > 0; i-- {
 		v := g.views[i-1]
-		if x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1 {
+		if x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1 && !v.Hidden {
 			return v, nil
 		}
 	}
