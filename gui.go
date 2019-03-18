@@ -394,7 +394,6 @@ func (g *Gui) MainLoop() error {
 			g.tbEvents <- termbox.PollEvent()
 		}
 	}()
-
 	inputMode := termbox.InputAlt
 	if g.InputEsc {
 		inputMode = termbox.InputEsc
@@ -460,7 +459,6 @@ func (g *Gui) handleEvent(ev *termbox.Event) error {
 // flush updates the gui, re-drawing frames and buffers.
 func (g *Gui) flush() error {
 	termbox.Clear(termbox.Attribute(g.FgColor), termbox.Attribute(g.BgColor))
-
 	maxX, maxY := termbox.Size()
 	// if GUI's size has changed, we need to redraw all views
 	if maxX != g.maxX || maxY != g.maxY {
@@ -472,9 +470,12 @@ func (g *Gui) flush() error {
 
 	for _, m := range g.managers {
 		if err := m.Layout(g); err != nil {
+
 			return err
 		}
 	}
+
+	//log.Println("ccc")
 	for _, v := range g.views {
 		if v.Hidden {
 			continue
