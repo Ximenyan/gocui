@@ -703,3 +703,19 @@ func (g *Gui) execKeybindings(v *View, ev *termbox.Event) (matched bool, err err
 	}
 	return matched, nil
 }
+
+func (g *Gui) AddScene(s *scene) (err error) {
+	g.keybindings = s.Keybindings
+	g.SetManagerFunc(s.Manager)
+	return nil
+}
+func (g *Gui) DelScene(s *scene) (err error) {
+	g.keybindings = s.Keybindings
+	g.SetManagerFunc(s.Manager)
+	return nil
+}
+func (g *Gui) EntryScene(s *scene) (err error) {
+	g.keybindings = s.Keybindings
+	g.SetManagerFunc(s.Manager)
+	return nil
+}
