@@ -6,7 +6,6 @@ package gocui
 
 import (
 	"errors"
-	"sync"
 
 	"github.com/nsf/termbox-go"
 )
@@ -33,15 +32,16 @@ const (
 // Gui represents the whole User Interface, including the views, layouts
 // and keybindings.
 type Gui struct {
-	tbEvents      chan termbox.Event
-	userEvents    chan userEvent
-	views         []*View
-	currentView   *View
-	managers      []Manager
-	keyBindingMap sync.Map
-	keybindings   []*keybinding
-	maxX, maxY    int
-	outputMode    OutputMode
+	sceneMap    map[string]*Scene
+	nowScence   *Scene
+	tbEvents    chan termbox.Event
+	userEvents  chan userEvent
+	views       []*View
+	currentView *View
+	managers    []Manager
+	keybindings []*keybinding
+	maxX, maxY  int
+	outputMode  OutputMode
 
 	// BgColor and FgColor allow to configure the background and foreground
 	// colors of the GUI.
@@ -76,9 +76,9 @@ func NewGui(mode OutputMode) (*Gui, error) {
 	if err := termbox.Init(); err != nil {
 		return nil, err
 	}
-
 	g := &Gui{}
 	g.outputMode = mode
+	g.sceneMap = make(map[string]*Scene)
 	termbox.SetOutputMode(termbox.OutputMode(mode))
 
 	g.tbEvents = make(chan termbox.Event, 20)
@@ -704,18 +704,25 @@ func (g *Gui) execKeybindings(v *View, ev *termbox.Event) (matched bool, err err
 	return matched, nil
 }
 
-func (g *Gui) AddScene(s *scene) (err error) {
-	g.keybindings = s.Keybindings
-	g.SetManagerFunc(s.Manager)
+func (g *Gui) AddScene(scene_id string, s *Scene) (err error) {
+	g.sceneMap[scene_id] = s
 	return nil
 }
-func (g *Gui) DelScene(s *scene) (err error) {
-	g.keybindings = s.Keybindings
-	g.SetManagerFunc(s.Manager)
+func (g *Gui) DelScene(scene_id string) (err error) {
+	if _, ok := g.sceneMap[scene_id]; ok {
+		delete(g.sceneMap, scene_id)
+	}
 	return nil
 }
-func (g *Gui) EntryScene(s *scene) (err error) {
-	g.keybindings = s.Keybindings
-	g.SetManagerFunc(s.Manager)
+func (g *Gui) EntryScene(scene_id string) (err error) {
+	if g.nowScence != nil {
+		g.nowScence.exit()
+	}
+	var ok bool
+	if g.nowScence, ok = g.sceneMap[scene_id]; ok {
+		g.sceneMap[scene_id].init()
+		g.SetManagerFunc(g.sceneMap[scene_id].Manager)
+		g.keybindings = g.nowScence.Keybindings
+	}
 	return nil
 }
