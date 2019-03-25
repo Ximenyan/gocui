@@ -1,6 +1,7 @@
 package gocui
 
 type Scene struct {
+	G           *Gui
 	ViewMap     map[string]*View
 	Manager     func(*Gui) error
 	Keybindings []*keybinding
@@ -8,14 +9,6 @@ type Scene struct {
 	Exit_Func   func() error
 }
 
-func CreateScene() *Scene {
-	s := new(Scene)
-	s.ViewMap = make(map[string]*View)
-	s.Keybindings = []*keybinding{}
-	s.Init_Func = nil
-	s.Exit_Func = nil
-	return s
-}
 func (this *Scene) init() {
 	if this.Init_Func != nil {
 		this.Init_Func()

@@ -33,6 +33,7 @@ const (
 // and keybindings.
 type Gui struct {
 	sceneMap    map[string]*Scene
+	nowScenceID string
 	nowScence   *Scene
 	tbEvents    chan termbox.Event
 	userEvents  chan userEvent
@@ -85,7 +86,7 @@ func NewGui(mode OutputMode) (*Gui, error) {
 	g.userEvents = make(chan userEvent, 20)
 
 	g.maxX, g.maxY = termbox.Size()
-
+	g.InitMainScene()
 	g.BgColor, g.FgColor = ColorDefault, ColorDefault
 	g.SelBgColor, g.SelFgColor = ColorDefault, ColorDefault
 
@@ -389,6 +390,7 @@ func (g *Gui) SetManagerFunc(manager func(*Gui) error) {
 // MainLoop runs the main loop until an error is returned. A successful
 // finish should return ErrQuit.
 func (g *Gui) MainLoop() error {
+	//g.nowScence = g.GetScene(g.nowScenceID)
 	go func() {
 		for {
 			g.tbEvents <- termbox.PollEvent()
@@ -470,7 +472,6 @@ func (g *Gui) flush() error {
 
 	for _, m := range g.managers {
 		if err := m.Layout(g); err != nil {
-
 			return err
 		}
 	}
@@ -714,6 +715,12 @@ func (g *Gui) DelScene(scene_id string) (err error) {
 	}
 	return nil
 }
+func (g *Gui) GetScene(scene_id string) (s *Scene) {
+	if s, ok := g.sceneMap[scene_id]; ok {
+		return s
+	}
+	return nil
+}
 func (g *Gui) EntryScene(scene_id string) (err error) {
 	if g.nowScence != nil {
 		g.nowScence.exit()
@@ -725,4 +732,40 @@ func (g *Gui) EntryScene(scene_id string) (err error) {
 		g.keybindings = g.nowScence.Keybindings
 	}
 	return nil
+}
+
+func (g *Gui) CreateScene(id string) *Scene {
+	s := new(Scene)
+	s.G = g
+	s.ViewMap = make(map[string]*View)
+	s.Keybindings = []*keybinding{}
+	s.Init_Func = nil
+	s.Exit_Func = nil
+	g.AddScene(id, s)
+	return s
+}
+func (g *Gui) InitMainScene() (err error) {
+	s := g.GetMainScene()
+	s.SetLayout(func(g *Gui) error {
+		maxX, maxY := g.Size()
+		if v, err := g.SetPopupView("v1", 0, 0, maxX/2-1, maxY/2-1); err != nil {
+			if err != ErrUnknownView {
+				return err
+			}
+			v.Title = "Hello World"
+			v.Editable = true
+			v.Wrap = true
+		}
+		return nil
+	})
+	g.EntryScene("G.MAIN.Scene")
+	return nil
+}
+
+func (g *Gui) GetMainScene() *Scene {
+	s := g.GetScene("G.MAIN.Scene")
+	if s == nil {
+		s = g.CreateScene("G.MAIN.Scene")
+	}
+	return s
 }
