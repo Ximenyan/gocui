@@ -87,6 +87,7 @@ func NewGui(mode OutputMode) (*Gui, error) {
 
 	g.maxX, g.maxY = termbox.Size()
 	g.InitMainScene()
+	g.EntryScene("G.MAIN.Scene")
 	g.BgColor, g.FgColor = ColorDefault, ColorDefault
 	g.SelBgColor, g.SelFgColor = ColorDefault, ColorDefault
 
@@ -391,6 +392,7 @@ func (g *Gui) SetManagerFunc(manager func(*Gui) error) {
 // finish should return ErrQuit.
 func (g *Gui) MainLoop() error {
 	//g.nowScence = g.GetScene(g.nowScenceID)
+	g.Refresh()
 	go func() {
 		for {
 			g.tbEvents <- termbox.PollEvent()
@@ -737,6 +739,7 @@ func (g *Gui) EntryScene(scene_id string) (err error) {
 func (g *Gui) CreateScene(id string) *Scene {
 	s := new(Scene)
 	s.G = g
+	s.ID = id
 	s.ViewMap = make(map[string]*View)
 	s.Keybindings = []*keybinding{}
 	s.Init_Func = nil
@@ -744,6 +747,12 @@ func (g *Gui) CreateScene(id string) *Scene {
 	g.AddScene(id, s)
 	return s
 }
+
+func (g *Gui) Refresh() {
+	g.SetManagerFunc(g.nowScence.Manager)
+	g.keybindings = g.nowScence.Keybindings
+}
+
 func (g *Gui) InitMainScene() (err error) {
 	s := g.GetMainScene()
 	s.SetLayout(func(g *Gui) error {
@@ -758,7 +767,6 @@ func (g *Gui) InitMainScene() (err error) {
 		}
 		return nil
 	})
-	g.EntryScene("G.MAIN.Scene")
 	return nil
 }
 

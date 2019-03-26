@@ -2,6 +2,7 @@ package gocui
 
 type Scene struct {
 	G           *Gui
+	ID          string
 	ViewMap     map[string]*View
 	Manager     func(*Gui) error
 	Keybindings []*keybinding
