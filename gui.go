@@ -183,6 +183,14 @@ func (g *Gui) SetEditTextView(name string, x0, y0, x1, y1 int) (*View, error) {
 		if err != ErrUnknownView {
 			return nil, err
 		}
+		if err := g.SetKeybinding("", MouseLeft, ModNone, func(g *Gui, click_v *View) error {
+			if click_v.Name() == v.Name() {
+				g.SetCurrentView(v.Name())
+			}
+			return nil
+		}); err != nil {
+			return v, ErrUnknownView
+		}
 		v.Type = EditTextView
 		v.Editable = true
 		v.Wrap = true
