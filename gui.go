@@ -745,7 +745,7 @@ func (g *Gui) EntryScene(scene_id string) (err error) {
 }
 
 func (g *Gui) CreateScene(id string) *Scene {
-	s := new(Scene)
+	s := CreateScene()
 	s.G = g
 	s.ID = id
 	s.ViewMap = make(map[string]*View)
@@ -757,7 +757,7 @@ func (g *Gui) CreateScene(id string) *Scene {
 }
 
 func (g *Gui) Refresh() {
-	g.SetManagerFunc(g.nowScence.Manager)
+	g.SetManagerFunc(g.nowScence.layout)
 	g.keybindings = g.nowScence.Keybindings
 }
 

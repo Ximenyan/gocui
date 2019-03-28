@@ -221,7 +221,6 @@ func (v *View) Origin() (x, y int) {
 // be called to clear the view's buffer.
 func (v *View) Write(p []byte) (n int, err error) {
 	v.tainted = true
-
 	for _, ch := range bytes.Runes(p) {
 		switch ch {
 		case '\n':
